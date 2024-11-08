@@ -1,0 +1,40 @@
+
+
+services:
+  postgres:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: prefect
+
+  server:
+    build:
+      context: .
+      dockerfile: Server.Dockerfile
+    ports:
+      - "4200:4200"
+    depends_on:
+      - postgres
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4200/api/health"]
+      interval: 5s
+      retries: 3
+      start_period: 5s
+
+  worker:
+    build:
+      context: .
+      dockerfile: Worker.Dockerfile
+    depends_on:
+      server:
+        condition: service_healthy
+    deploy:
+      replicas: 20 # Increase race condition odds
+
+  client:
+    build:
+      context: .
+      dockerfile: Client.Dockerfile
+    depends_on:
+      - worker

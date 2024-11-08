@@ -1,0 +1,15 @@
+#!/bin/bash
+
+echo "Creating work pool"
+prefect work-pool create --type process my-work-pool --overwrite
+
+echo "Creating deployment"
+prefect --no-prompt deploy flow.py:hello_world --name my-deployment --pool my-work-pool
+
+echo "Create a initial flow run to cause race condition"
+prefect deployment run 'hello-world/my-deployment'
+
+sleep 5
+
+echo "Creating a new flow run"
+prefect deployment run 'hello-world/my-deployment'
